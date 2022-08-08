@@ -36,7 +36,6 @@ jobs:
     name: Checks and variables
     runs-on: ubuntu-20.04
     outputs:
-      sha: ${{ steps.vars.outputs.sha }}
       go_path: ${{ steps.vars.outputs.go_path }}
     steps:
       - name: Checkout Repository
@@ -49,7 +48,6 @@ jobs:
       - name: Output Variables
         id: vars
         run: |
-          echo "::set-output name=sha::$(echo ${GITHUB_SHA} | cut -c1-7)"
           echo "::set-output name=go_path::$(go env GOPATH)"
       - name: Check if go.mod and go.sum are up to date
         run: |
@@ -75,7 +73,7 @@ jobs:
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v3
         with:
-          name: cover-${{ needs.vars.outputs.sha }}.html
+          name: cover-${{ github.run_id }}.html
           path: ${{ github.workspace }}/cover.html
         if: always()
 
