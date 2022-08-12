@@ -124,10 +124,10 @@ func MustValidateArguments(flagset *flag.FlagSet, validators ...ValidatorContext
 	}
 }
 
-func getBuildInfo() (commitHash string, commitTime string, dirtyBuild bool) {
+func getBuildInfo() (commitHash string, commitTime string, dirtyBuild string) {
 	commitHash = "unknown"
 	commitTime = "unknown"
-	dirtyBuild = true
+	dirtyBuild = "unknown"
 
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
@@ -140,7 +140,7 @@ func getBuildInfo() (commitHash string, commitTime string, dirtyBuild bool) {
 		case "vcs.time":
 			commitTime = kv.Value
 		case "vcs.modified":
-			dirtyBuild = kv.Value == "true"
+			dirtyBuild = kv.Value
 		}
 	}
 
