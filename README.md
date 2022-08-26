@@ -4,150 +4,55 @@
 
 NGINX Kubernetes Gateway is an open-source project that provides an implementation of the [Gateway API](https://gateway-api.sigs.k8s.io/) using [NGINX](https://nginx.org/) as the data plane. The goal of this project is to implement the core Gateway APIs -- `Gateway`, `GatewayClass`, `HTTPRoute`, `TCPRoute`, `TLSRoute`, and `UDPRoute` -- to configure an HTTP or TCP/UDP load balancer, reverse-proxy, or API gateway for applications running on Kubernetes. NGINX Kubernetes Gateway is currently under development and supports a subset of the Gateway API.
 
-> Warning: This project is actively in development (pre-alpha feature state) and should not be deployed in a production environment.
+For a list of supported Gateway API resources and features, see the [Gateway API Compatibility](docs/gateway-api-compatibility.md.md) doc.
+
+> Warning: This project is actively in development (beta feature state) and should not be deployed in a production environment.
 > All APIs, SDKs, designs, and packages are subject to change.
 
-# Run NGINX Kubernetes Gateway
+## Getting Started
 
-## Prerequisites
+1. [Quick Start on a kind cluster](docs/running-on-kind.md).
+2. [Install](docs/installation.md) NGINX Kubernetes Gateway.
+3. [Build](docs/building-the-image.md) an NGINX Kubernetes Gateway container image from source or use a pre-built image available on [GitHub Container Registry](https://github.com/nginxinc/nginx-kubernetes-gateway/pkgs/container/nginx-kubernetes-gateway).
+4. Deploy various [examples](examples). 
 
-Before you can build and run the NGINX Kubernetes Gateway, make sure you have the following software installed on your machine:
-- [git](https://git-scm.com/)
-- [GNU Make](https://www.gnu.org/software/software.html)
-- [Docker](https://www.docker.com/) v18.09+
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+## NGINX Kubernetes Gateway Releases
 
-## Build the image
+We publish NGINX Kubernetes Gateway releases on GitHub. See our [releases page](https://github.com/nginxinc/nginx-kubernetes-gateway/releases).
 
-1. Clone the repo and change into the `nginx-kubernetes-gateway` directory:
+The latest release is [0.1.0](https://github.com/nginxinc/kubernetes-ingress/releases/tag/v0.1.0).
 
-   ```
-   git clone https://github.com/nginxinc/nginx-kubernetes-gateway.git
-   cd nginx-kubernetes-gateway
-   ```
+The edge version is useful for experimenting with new features that are not yet published in a release. To use, choose the *edge* version built from the [latest commit](https://github.com/nginxinc/nginx-kubernetes-gateway/commits/main) from the main branch.
 
-1. Build the image:
+To use NGINX Kubernetes Gateway, you need to have access to:
+* An NGINX Kubernetes Gateway image.
+* Installation manifests.
+* Documentation and examples.
 
-   ```
-   make PREFIX=myregistry.example.com/nginx-kubernetes-gateway container
-   ```
+It is important that the versions of those things above match.
 
-   Set the `PREFIX` variable to the name of the registry you'd like to push the image to. By default, the image will be named `nginx-kubernetes-gateway:0.0.1`.
+The table below summarizes the options regarding the images, manifests, documentation and examples and gives your links to the correct versions:
 
-1. Push the image to your container registry:
+| Version | Description | Image | Installation Manifests | Documentation and Examples |
+|-|-|-|-|-|
+| Latest release | For experimental use | Use the 0.1.0 image from [GitHub](https://github.com/nginxinc/nginx-kubernetes-gateway/pkgs/container/nginx-kubernetes-gateway) | [Manifests](https://github.com/nginxinc/nginx-kubernetes-gateway/tree/v0.1.0/deploy). | [Documentation](https://github.com/nginxinc/nginx-kubernetes-gateway/tree/v0.1.0/docs). [Examples](https://github.com/nginxinc/nginx-kubernetes-gateway/tree/v0.1.0/examples). |
+| Edge| For experimental use and latest features | Use the edge image from [GitHub](https://github.com/nginxinc/nginx-kubernetes-gateway/pkgs/container/nginx-kubernetes-gateway) | [Manifests](https://github.com/nginxinc/nginx-kubernetes-gateway/tree/main/deploy). | [Documentation](https://github.com/nginxinc/nginx-kubernetes-gateway/tree/main/docs). [Examples](https://github.com/nginxinc/nginx-kubernetes-gateway/tree/main/examples). |
+## Technical Specifications
 
-   ```
-   docker push myregistry.example.com/nginx-kubernetes-gateway:0.0.1
-   ```
+The following table lists the software versions NGINX Kubernetes Gateway supports.
 
-   Make sure to substitute `myregistry.example.com/nginx-kubernetes-gateway` with your private registry.
+| NGINX Kubernetes Gateway | Gateway API | Kubernetes | NGINX OSS |
+|-|-|-|-|
+| 0.1.0 | 0.5.0 | 1.19+ | 1.21.3|
 
-## Deploy NGINX Kubernetes Gateway
+## Contacts
 
-You can deploy NGINX Kubernetes Gateway on an existing Kubernetes 1.16+ cluster. The following instructions walk through the steps for deploying on a [kind](https://kind.sigs.k8s.io/) cluster.
+We’d like to hear your feedback! If you have any suggestions or experience issues with our Gateway Controller, please create an issue or send a pull request on GitHub. You can contact us directly via kubernetes@nginx.com or on the [NGINX Community Slack](https://nginxcommunity.slack.com/channels/nginx-kubernetes-gateway) in the `#nginx-kubernetes-gateway` channel.
 
-1. Load the NGINX Kubernetes Gateway image onto your kind cluster:
+## Contributing
 
-   ```
-   kind load docker-image nginx-kubernetes-gateway:0.0.1
-   ```
+Please read our [Contributing guide](CONTRIBUTING.md) if you'd like to contribute to the project.
 
-   Make sure to substitute the image name with the name of the image you built.
+## Support
 
-1. Install the Gateway CRDs:
-
-   ```
-   kubectl apply -k "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v0.5.0"
-   ```
-
-1. Create the nginx-gateway namespace:
-
-    ```
-    kubectl apply -f deploy/manifests/namespace.yaml
-    ```
-
-1. Create the njs-modules configmap:
-
-    ```
-    kubectl create configmap njs-modules --from-file=internal/nginx/modules/src/httpmatches.js -n nginx-gateway
-    ```
-
-1. Create the GatewayClass resource:
-
-    ```
-    kubectl apply -f deploy/manifests/gatewayclass.yaml
-    ```
-
-1. Deploy the NGINX Kubernetes Gateway:
-
-   Before deploying, make sure to update the Deployment spec in `nginx-gateway.yaml` to reference the image you built.
-
-   ```
-   kubectl apply -f deploy/manifests/nginx-gateway.yaml
-   ```
-
-1. Confirm the NGINX Kubernetes Gateway is running in `nginx-gateway` namespace:
-
-   ```
-   kubectl get pods -n nginx-gateway
-   NAME                             READY   STATUS    RESTARTS   AGE
-   nginx-gateway-5d4f4c7db7-xk2kq   2/2     Running   0          112s
-   ```
-
-## Expose NGINX Kubernetes Gateway
-
-You can gain access to NGINX Kubernetes Gateway by creating a `NodePort` Service or a `LoadBalancer` Service.
-
-### Create a NodePort Service
-
-Create a service with type `NodePort`:
-
-```
-kubectl apply -f deploy/manifests/service/nodeport.yaml
-```
-
-A `NodePort` service will randomly allocate one port on every node of the cluster. To access NGINX Kubernetes Gateway, use an IP address of any node in the cluster along with the allocated port.
-
-### Create a LoadBalancer Service
-
-Create a service with type `LoadBalancer` using the appropriate manifest for your cloud provider.
-
-- For GCP or Azure:
-
-   ```
-   kubectl apply -f deploy/manifests/service/loadbalancer.yaml
-   ```
-
-   Lookup the public IP of the load balancer:
-
-   ```
-   kubectl get svc nginx-gateway -n nginx-gateway
-   ```
-
-   Use the public IP of the load balancer to access NGINX Kubernetes Gateway.
-
-- For AWS:
-
-   ```
-   kubectl apply -f deploy/manifests/service/loadbalancer-aws-nlb.yaml
-   ```
-
-   In AWS, the NLB DNS name will be reported by Kubernetes in lieu of a public IP. To get the DNS name run:
-
-   ```
-   kubectl get svc nginx-gateway -n nginx-gateway
-   ```
-
-   In general, you should rely on the NLB DNS name, however for testing purposes you can resolve the DNS name to get the IP address of the load balancer:
-
-   ```
-   nslookup <dns-name>
-   ```
-
-# Test NGINX Kubernetes Gateway
-
-To test the NGINX Kubernetes Gateway run:
-
-```
-make unit-test
-```
+NGINX Kubernetes Gateway is not covered by any support contract.
